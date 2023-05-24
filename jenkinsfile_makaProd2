@@ -1,0 +1,31 @@
+node {
+def mavenHome = tool name: 'maven3.9.1'
+    stage ('1cloneCode'){
+        git "https://github.com/makapainttailor/maven-web-application"
+        //sh "git clone https://github.com/LandmakTechnology/maven-web-application"
+        //bat "git clone https://github.com/LandmakTechnology/maven-web-application"
+    }
+    stage('2Test&Build'){
+     sh "${mavenHome}/bin/mvn install"
+    }
+    stage('3CodeQuality'){
+        sh "${mavenHome}/bin/mvn sonar:sonar"
+        
+    }
+    stage('4UploadArtifacts'){
+      sh "${mavenHome}/bin/mvn deploy"  
+    }
+    stage('5deploy_uat'){
+   //deploy adapters: [tomcat9(credentialsId: '52635d02-2ddf-499c-9cf3-fc5214057c01', path: '', url: '')], contextPath: null, war: 'target/*war'
+    }
+    stage('6Approval'){
+        timeout(time:9, unit:'HOURS'){
+            input message: 'Application ready for deployment, please review and approve'
+        }
+    }
+    stage('7Notification'){
+        emailext body: '''hi team
+this is the current status of the maka-prod job build.''', recipientProviders: [buildUser(), contributor()], subject: 'maka-prod-build-status', to: 'akannibbtnd@gmail.com'
+    }
+}
+
